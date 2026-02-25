@@ -1,0 +1,31 @@
+services:
+  medium-digest:
+    build: .
+    container_name: medium-digest
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PLAYWRIGHT_HEADLESS=true
+      # Пути внутри контейнера (к смонтированным файлам)
+      - GOOGLE_DRIVE_CREDENTIALS_FILE=/app/secrets/credentials.json
+      - GOOGLE_DRIVE_TOKEN_FILE=/app/secrets/token.json
+      - GOOGLE_SHEETS_TOKEN_FILE=/app/secrets/token_sheets.json
+
+    volumes:
+      # Монтируем секреты (credentials и токены Google)
+      - ./secrets:/app/secrets
+
+    # --- Режимы запуска (раскомментируйте один) ---
+
+    # Режим 1: однократный запуск (по умолчанию)
+    command: python main.py
+
+    # Режим 2: запуск по расписанию (cron внутри контейнера)
+    # Раскомментируйте строки ниже и закомментируйте command выше
+    # command: cron
+    # environment:
+    #   - CRON_SCHEDULE=0 8 * * *    # каждый день в 08:00

@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Секреты — НИКОГДА не коммитить
+.env
+credentials.json
+token.json
+token_sheets.json
+storage_state.json
+secrets/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Промежуточные/временные файлы
+mail_post.json
+Medium1.txt
+*.png
+
+# OS
+Thumbs.db
+.DS_Store

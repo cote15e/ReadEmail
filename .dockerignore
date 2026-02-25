@@ -1,0 +1,15 @@
+venv/
+__pycache__/
+*.pyc
+.idea/
+.env
+credentials.json
+token.json
+token_sheets.json
+storage_state.json
+mail_post.json
+Medium1.txt
+*.png
+*.iml
+.git/
+.gitignore
