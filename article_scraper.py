@@ -154,7 +154,7 @@ def _extract_text_with_playwright(page: Page, url: str, debug: bool = False) -> 
         # ожидание networkidle почти всегда заканчивается таймаутом.
         # Достаточно дождаться события load и немного подождать динамику.
         page.goto(url, wait_until="load", timeout=30000)
-        time.sleep(3)  # Additional wait for dynamic content
+        time.sleep(10)  # Additional wait for dynamic content
         
         # Wait for article container to appear
         try:
@@ -327,7 +327,7 @@ def _extract_text_with_playwright(page: Page, url: str, debug: bool = False) -> 
         return None
 
 
-def fetch_articles_content(articles: List[Dict[str, str]], timeout: int = 30, delay: float = 2.0, use_playwright: bool = True, debug: bool = False) -> List[Dict[str, str]]:
+def fetch_articles_content(articles: List[Dict[str, str]], timeout: int = 30, delay: float = 10.0, use_playwright: bool = True, debug: bool = False) -> List[Dict[str, str]]:
     """
     Given a list of {"Title": ..., "Link": ...}, fetch each page and extract main text.
     Uses Playwright if available to avoid 403 Forbidden errors.
@@ -335,7 +335,7 @@ def fetch_articles_content(articles: List[Dict[str, str]], timeout: int = 30, de
     Args:
         articles: List of dicts with "Title" and "Link" keys
         timeout: Request timeout in seconds (default: 30)
-        delay: Delay between requests in seconds to avoid rate limiting (default: 2.0)
+        delay: Delay between requests in seconds to avoid rate limiting (default: 10.0)
         use_playwright: Use Playwright if available (default: True)
     
     Returns:

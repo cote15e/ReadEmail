@@ -7,6 +7,9 @@ venv/
 
 # Секреты — НИКОГДА не коммитить
 .env
+.env.old
+.env.*
+!.env.example
 credentials.json
 token.json
 token_sheets.json
