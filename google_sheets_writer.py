@@ -4,14 +4,15 @@
 Таблица:
 - Имя: Medium_Digest (переменная G_SHEETS_SPREADSHEET_NAME)
 - Или прямой ID: G_SHEETS_SPREADSHEET_ID (приоритетнее имени)
-- Столбцы: Title, Summaries, Link
+- Столбцы: Date, Title, Summaries, Tag, Link
 
 Использует те же credentials, что и Google Drive:
-- GOOGLE_DRIVE_CREDENTIALS_FILE (credentials.json)
-- GOOGLE_SHEETS_TOKEN_FILE (по умолчанию: token_sheets.json)
+    - GOOGLE_DRIVE_CREDENTIALS_FILE (credentials.json)
+    - GOOGLE_SHEETS_TOKEN_FILE (по умолчанию: token_sheets.json)
 """
 
 import os
+from datetime import date
 from typing import Optional, List
 
 from dotenv import load_dotenv
@@ -110,9 +111,9 @@ def _create_spreadsheet(service, spreadsheet_name: str) -> str:
     # Добавляем заголовки
     service.spreadsheets().values().update(
         spreadsheetId=spreadsheet_id,
-        range="Sheet1!A1:C1",
+        range="Sheet1!A1:E1",
         valueInputOption="RAW",
-        body={"values": [["Title", "Summaries", "Link"]]},
+        body={"values": [["Date", "Title", "Summaries", "Tag", "Link"]]},
     ).execute()
 
     return spreadsheet_id
@@ -147,7 +148,8 @@ def append_summary_row(
     link: str,
 ) -> None:
     """
-    Добавляет строку в таблицу: Title, Summaries, Link.
+    Добавляет строку в таблицу: Date, Title, Summaries, Tag, Link.
+    Date — текущая дата в формате дд-мм-гггг; Tag оставляется пустым.
     """
     service, drive_service = _get_sheets_service()
     spreadsheet_id = _resolve_spreadsheet_id(service, drive_service)
@@ -159,12 +161,13 @@ def append_summary_row(
         raise RuntimeError(f"No sheets found in spreadsheet {spreadsheet_id}")
     sheet_title = sheets[0]["properties"]["title"]
 
-    values: List[List[str]] = [[title, summary, link]]
+    date_str = date.today().strftime("%d-%m-%Y")
+    values: List[List[str]] = [[date_str, title, summary, "", link]]
     body = {"values": values}
 
     service.spreadsheets().values().append(
         spreadsheetId=spreadsheet_id,
-        range=f"{sheet_title}!A:C",
+        range=f"{sheet_title}!A:E",
         valueInputOption="RAW",
         insertDataOption="INSERT_ROWS",
         body=body,

@@ -80,10 +80,10 @@ The output will be a JSON list of articles found in your recent Medium Daily Dig
 - Модуль `openai_gpts.py` отправляет **одну статью за раз** (только `Title` и `Text`) в ChatGPT и получает краткую аннотацию на русском.
 - Модуль `google_sheets_writer.py` записывает результат в таблицу Google Sheets:
   - Имя таблицы по умолчанию: `Medium_Digest`
-  - Столбцы: `Title`, `Summaries`, `Link`
+  - Столбцы: `Date`, `Title`, `Summaries`, `Tag`, `Link`
 - Скрипт проходит циклом по всем статьям (из Gmail или PDF на Google Drive) и для каждой:
   1. Получает summary из OpenAI
-  2. Добавляет строку в Google Sheets с заголовком, аннотацией и ссылкой на статью
+  2. Добавляет строку в Google Sheets с датой, заголовком, аннотацией, пустым Tag и ссылкой на статью
 
 ---
 
