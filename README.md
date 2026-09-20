@@ -1,6 +1,6 @@
 # Gmail Medium Digest Reader
 
-This simple CLI tool connects to your Gmail account, finds "Medium Daily Digest" emails, and extracts the article titles, links and full text into a JSON format.
+This simple CLI tool connects to your Gmail account, finds Medium digest emails (by default **"Medium Weekly Digest"**), and extracts the article titles, links and full text into a JSON format.
 
 ## Requirements
 
@@ -26,6 +26,8 @@ This simple CLI tool connects to your Gmail account, finds "Medium Daily Digest"
       ```env
       EMAIL_USER=your_email@gmail.com
       EMAIL_PASS=your_app_password
+      # Тема рассылки (подстрока). Несколько значений через запятую.
+      EMAIL_DIGEST_SUBJECT=Medium Weekly Digest
       ```
 
       > **Note:** To generate an App Password, go to your Google Account > Security > 2-Step Verification > App passwords.
@@ -62,7 +64,7 @@ Run the script:
 python main.py
 ```
 
-The output will be a JSON list of articles found in your recent Medium Daily Digests.
+The output will be a JSON list of articles found in your recent Medium digest emails.
 
 ```json
 [

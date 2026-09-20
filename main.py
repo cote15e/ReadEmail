@@ -2,7 +2,11 @@ import os
 import json
 from dotenv import load_dotenv
 from gmail_auth import connect_imap
-from digest_reader import fetch_medium_digest_articles, fetch_medium_subscription_articles
+from digest_reader import (
+    fetch_medium_digest_articles,
+    fetch_medium_subscription_articles,
+    parse_digest_subjects,
+)
 from article_scraper import fetch_articles_content
 from gdrive_reader import fetch_medium_pdfs_from_gdrive
 from openai_gpts import summarize_article
@@ -40,11 +44,21 @@ def main():
             if debug_mode:
                 print("[DEBUG] Connected successfully!")
 
+            digest_subjects = parse_digest_subjects(
+                os.getenv("EMAIL_DIGEST_SUBJECT", "Medium Weekly Digest")
+            )
+            if debug_mode:
+                print(f"[DEBUG] Digest subject filter: {digest_subjects or '(none)'}")
+
             # Step 1a: получить ссылки из дайджеста (noreply@medium.com)
-            link_articles = fetch_medium_digest_articles(mail, debug=debug_mode)
+            link_articles = fetch_medium_digest_articles(
+                mail, subjects=digest_subjects, debug=debug_mode
+            )
 
             # Step 1b: получить ссылки из подписок (subscriptions@medium.com)
-            subscription_articles = fetch_medium_subscription_articles(mail, debug=debug_mode)
+            subscription_articles = fetch_medium_subscription_articles(
+                mail, digest_subjects=digest_subjects, debug=debug_mode
+            )
             link_articles.extend(subscription_articles)
 
             if debug_mode:

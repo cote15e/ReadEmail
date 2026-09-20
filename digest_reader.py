@@ -26,18 +26,34 @@ def _decode_mime_header(value: str) -> str:
     return "".join(parts)
 
 
-def _matches_medium_digest(msg: Message, from_addr: str, subject: str = None) -> bool:
+def parse_digest_subjects(raw: str | None) -> List[str]:
     """
-    Check if email matches Medium Daily Digest.
-    Subject check is optional because real subjects are article titles, not "Medium Daily Digest".
+    Parse digest subject filter from settings.
+    Comma-separated list, e.g. "Medium Weekly Digest,Medium Daily Digest".
+    Empty / None means no subject filter (match all from the sender).
+    """
+    if not raw:
+        return []
+    return [part.strip() for part in raw.split(",") if part.strip()]
+
+
+def _subject_matches_any(subj: str, subjects: List[str]) -> bool:
+    subj_lower = (subj or "").lower()
+    return any(needle.lower() in subj_lower for needle in subjects)
+
+
+def _matches_medium_digest(msg: Message, from_addr: str, subjects: List[str] | None = None) -> bool:
+    """
+    Check if email is a Medium digest from the expected sender.
+    If subjects is non-empty, the Subject header must contain one of them
+    (substring, case-insensitive).
     """
     from_h = _decode_mime_header(msg.get("From", ""))
     if from_addr.lower() not in from_h.lower():
         return False
-    # Subject check is optional - real Medium digests have article titles as subjects
-    if subject:
+    if subjects:
         subj_h = _decode_mime_header(msg.get("Subject", ""))
-        return subject.lower() in subj_h.lower()
+        return _subject_matches_any(subj_h, subjects)
     return True
 
 
@@ -168,7 +184,12 @@ def _extract_continue_reading_link(html: str, debug: bool = False) -> str:
     return ""
 
 
-def fetch_medium_subscription_articles(mail, mailbox: str = "inbox", debug: bool = False) -> List[Dict[str, str]]:
+def fetch_medium_subscription_articles(
+    mail,
+    mailbox: str = "inbox",
+    digest_subjects: List[str] | None = None,
+    debug: bool = False,
+) -> List[Dict[str, str]]:
     """
     Обрабатывает письма от subscriptions@medium.com (отдельные статьи по подписке).
     Извлекает ссылку на статью из кнопки "Continue reading".
@@ -227,10 +248,11 @@ def fetch_medium_subscription_articles(mail, mailbox: str = "inbox", debug: bool
             if debug:
                 print(f"[DEBUG] Subject: {subj}")
 
-            # Пропускаем, если это Medium Daily Digest — его обрабатывает другая функция
-            if "medium daily digest" in subj.lower():
+            # Пропускаем дайджест — его обрабатывает fetch_medium_digest_articles
+            skip_subjects = digest_subjects or ["medium weekly digest", "medium daily digest"]
+            if _subject_matches_any(subj, skip_subjects):
                 if debug:
-                    print("[DEBUG] Skipping: this is a Daily Digest email")
+                    print("[DEBUG] Skipping: this is a digest email")
                 continue
 
             # Извлекаем ссылку из HTML
@@ -260,20 +282,29 @@ def fetch_medium_subscription_articles(mail, mailbox: str = "inbox", debug: bool
     return results
 
 
-def fetch_medium_digest_articles(mail, mailbox: str = "inbox", from_addr: str = "noreply@medium.com", subject: str = None, debug: bool = False) -> List[Dict[str, str]]:
+def fetch_medium_digest_articles(
+    mail,
+    mailbox: str = "inbox",
+    from_addr: str = "noreply@medium.com",
+    subjects: List[str] | None = None,
+    debug: bool = False,
+) -> List[Dict[str, str]]:
     """
     Fetch unread Medium digest emails, extract article titles/links, mark them as read.
     Returns a list of dicts: {"Title": ..., "Link": ...}
-    
+
     Args:
         mail: IMAP connection object
         mailbox: Mailbox name (default: "inbox")
         from_addr: Sender email address (default: "noreply@medium.com")
-        subject: Optional subject filter (default: None - matches all from sender)
+        subjects: Subject substrings to match (from EMAIL_DIGEST_SUBJECT).
+                  Empty/None matches all unread mail from the sender.
         debug: Enable debug output (default: False)
     """
+    subjects = subjects or []
     if debug:
         print(f"[DEBUG] Step 1: Selecting mailbox '{mailbox}'")
+        print(f"[DEBUG] Digest subject filter: {subjects or '(none — all from sender)'}")
     
     status, _ = mail.select(mailbox)
     if status != "OK":
@@ -332,7 +363,7 @@ def fetch_medium_digest_articles(mail, mailbox: str = "inbox", from_addr: str = 
             print(f"[DEBUG] From: {from_h}")
             print(f"[DEBUG] Subject: {subj_h}")
 
-        if not _matches_medium_digest(header_msg, from_addr=from_addr, subject=subject):
+        if not _matches_medium_digest(header_msg, from_addr=from_addr, subjects=subjects):
             if debug:
                 print("[DEBUG] Email does not match Medium digest criteria, skipping")
             continue
