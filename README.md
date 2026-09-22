@@ -43,13 +43,16 @@ This simple CLI tool connects to your Gmail account, finds Medium digest emails 
       GOOGLE_DRIVE_TOKEN_FILE=token.json
       ```
 
-3.  (Optional) Add OpenAI & Google Sheets configuration for analysis:
+3.  (Optional) Add AI & Google Sheets configuration for analysis:
 
     ```env
-    # Отправка статей на анализ в OpenAI GPTs
-    OPENAI_API_KEY=sk-...
+    # Провайдер: openai | openrouter | routerai
+    AI_PROVIDER=openai
     SEND_TO_GPT=false
-    OPENAI_MODEL=gpt-4o
+    AI_MODEL=gpt-4o
+    OPENAI_API_KEY=sk-...
+    # OPENROUTER_API_KEY=sk-or-...
+    # ROUTERAI_API_KEY=sk-...
 
     # Google Sheets (для сохранения результатов)
     G_SHEETS_SPREADSHEET_NAME=Medium_Digest
@@ -77,14 +80,20 @@ The output will be a JSON list of articles found in your recent Medium digest em
 ]
 ```
 
-### Анализ статей через OpenAI GPTs и сохранение в Google Sheets
+### Анализ статей через AI и сохранение в Google Sheets
 
-- Модуль `openai_gpts.py` отправляет **одну статью за раз** (только `Title` и `Text`) в ChatGPT и получает краткую аннотацию на русском.
+- Модуль `openai_gpts.py` отправляет **одну статью за раз** (только `Title` и `Text`) в AI и получает краткую аннотацию на русском.
+- Провайдер задаётся через `AI_PROVIDER`:
+  - `openai` — api.openai.com
+  - `openrouter` — openrouter.ai
+  - `routerai` — routerai.ru
+- Ключ: `OPENAI_API_KEY` / `OPENROUTER_API_KEY` / `ROUTERAI_API_KEY` (или общий `AI_API_KEY`).
+- Модель: `AI_MODEL` (для openrouter/routerai обычно вида `openai/gpt-4o`).
 - Модуль `google_sheets_writer.py` записывает результат в таблицу Google Sheets:
   - Имя таблицы по умолчанию: `Medium_Digest`
   - Столбцы: `Date`, `Title`, `Summaries`, `Tag`, `Link`
 - Скрипт проходит циклом по всем статьям (из Gmail или PDF на Google Drive) и для каждой:
-  1. Получает summary из OpenAI
+  1. Получает summary от выбранного AI-провайдера
   2. Добавляет строку в Google Sheets с датой, заголовком, аннотацией, пустым Tag и ссылкой на статью
 
 ---

@@ -72,10 +72,15 @@ def main():
         # Output JSON: список статей с полем Title, Link и Text
         print(json.dumps(full_articles, indent=4, ensure_ascii=False))
 
-        # Step 3 (опционально): отправить статьи на анализ в OpenAI GPTs и записать в Google Sheets
+        # Step 3 (опционально): отправить статьи на анализ в AI и записать в Google Sheets
         send_to_gpts = os.getenv("SEND_TO_GPT", "false").lower() in ("1", "true", "yes")
         if send_to_gpts and full_articles:
-            model = os.getenv("OPENAI_MODEL", "gpt-4o")
+            ai_provider = (os.getenv("AI_PROVIDER") or "openai").strip().lower()
+            # AI_MODEL предпочтительнее; OPENAI_MODEL — для обратной совместимости
+            model = (os.getenv("AI_MODEL") or os.getenv("OPENAI_MODEL") or "").strip() or None
+            if debug_mode:
+                print(f"[DEBUG] AI provider: {ai_provider}, model: {model or '(provider default)'}")
+
             for idx, article in enumerate(full_articles, start=1):
                 title = (article.get("Title") or "").strip()
                 text = (article.get("Text") or "").strip()
@@ -92,16 +97,22 @@ def main():
                 summary_result = summarize_article(
                     title=title,
                     text=text,
+                    provider=ai_provider,
                     model=model,
                 )
 
                 if "error" in summary_result:
-                    print(f"[GPTs] Error for article {idx}: {summary_result['error']}")
+                    provider_used = summary_result.get("provider", ai_provider)
+                    print(f"[AI:{provider_used}] Error for article {idx}: {summary_result['error']}")
                     continue
 
                 summary = summary_result.get("summary", "")
                 if debug_mode:
-                    print(f"[DEBUG] Summary length for article {idx}: {len(summary)} chars")
+                    print(
+                        f"[DEBUG] Summary length for article {idx}: {len(summary)} chars "
+                        f"(provider={summary_result.get('provider')}, "
+                        f"model={summary_result.get('model')})"
+                    )
 
                 try:
                     append_summary_row(title=title, summary=summary, link=link)
